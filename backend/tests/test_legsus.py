@@ -83,3 +83,10 @@ def test_fare_estimate_steps():
     assert p.fare_estimate(1000) == 5.50
     assert p.fare_estimate(8000) in p.cfg["fare_steps_ghs"]
     assert p.fare_estimate(8000) > 5.50
+
+
+def test_readonly_mode_blocks_fare_logging(client, monkeypatch):
+    monkeypatch.setenv("LEGSUS_READONLY", "1")
+    assert client.get("/api/meta").json()["writable"] is False
+    r = client.post("/api/fares", json={"route": "1", "from_stop": "a", "to_stop": "b", "fare": 6})
+    assert r.status_code == 503

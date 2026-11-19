@@ -74,6 +74,14 @@ class Overrides:
 _lock = threading.Lock()
 
 
+def overrides_writable(path: Path = OVERRIDES_PATH) -> bool:
+    """Serverless hosts (Vercel) have a read-only, throwaway filesystem."""
+    if os.environ.get("VERCEL") or os.environ.get("LEGSUS_READONLY"):
+        return False
+    target = path if path.exists() else path.parent
+    return os.access(target, os.W_OK)
+
+
 def load_overrides(path: Path = OVERRIDES_PATH) -> Overrides:
     if not path.exists():
         return Overrides()

@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .config import GTFS_DIR, OVERRIDES_PATH, append_fare_log, load_overrides
+from .config import GTFS_DIR, OVERRIDES_PATH, append_fare_log, load_overrides, overrides_writable
 from .network import Network, load_network
 from .router import Place, Planner
 
@@ -71,7 +71,8 @@ def readyz():
 def meta():
     p = state.planner
     return {**state.net.summary(), "settings": p.cfg,
-            "places": p.ov.places, "fares_logged": len(p.ov.fare_log)}
+            "places": p.ov.places, "fares_logged": len(p.ov.fare_log),
+            "writable": overrides_writable()}
 
 
 @app.get("/api/search")
@@ -121,6 +122,9 @@ class FareIn(BaseModel):
 
 @app.post("/api/fares", status_code=201)
 def log_fare(body: FareIn):
+    if not overrides_writable():
+        raise HTTPException(503, "Fare logging is off on this host (read-only filesystem). "
+                                 "Edit data/overrides.yaml in GitHub instead, or self-host with Docker.")
     entry = {**body.model_dump(exclude_none=True), "date": date.today().isoformat()}
     append_fare_log(entry, OVERRIDES_PATH)
     reload_planner()

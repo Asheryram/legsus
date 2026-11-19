@@ -7,7 +7,7 @@
   const mins = (m) => (m >= 60 ? `${Math.floor(m / 60)}h ${Math.round(m % 60)}m` : `${Math.round(m)} min`);
   const dist = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
 
-  const state = { from: null, to: null, plan: null, selected: 0 };
+  const state = { from: null, to: null, plan: null, selected: 0, writable: true };
 
   // ---------- map ----------
   const map = L.map("map", { zoomControl: false }).setView([5.6037, -0.187], 12);
@@ -179,8 +179,8 @@
       <details class="stoplist"><summary>Stops on the way</summary><ol>${l.stop_names.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></details>
       <div class="fare-row">
         <b>${l.fare_source === "estimate" ? "~" : ""}${ghs(l.fare_ghs)}</b><span class="est">${esc(l.fare_source)}</span>
-        <input type="number" step="0.1" min="1" placeholder="paid" aria-label="Fare paid" />
-        <button data-route="${esc(l.route_ref)}" data-from="${esc(l.from.stop_id)}" data-to="${esc(l.to.stop_id)}">Log fare</button>
+        ${state.writable ? `<input type="number" step="0.1" min="1" placeholder="paid" aria-label="Fare paid" />
+        <button data-route="${esc(l.route_ref)}" data-from="${esc(l.from.stop_id)}" data-to="${esc(l.to.stop_id)}">Log fare</button>` : ""}
       </div>
       <p class="sid">stops ${esc(l.from.stop_id)} → ${esc(l.to.stop_id)}</p>
     </div></div>`;
@@ -221,6 +221,7 @@
 
   // saved places as quick picks
   fetch("/api/meta").then((r) => r.json()).then((m) => {
+    state.writable = m.writable !== false;
     status(`${m.routes} trotro lines · ${m.stops} stops loaded`);
   }).catch(() => status("API not reachable"));
 })();
