@@ -44,49 +44,76 @@
   });
 
   // ---------- search / autocomplete ----------
-  async function searchPlaces(q) {
-    const local = await fetch(`/api/search?q=${encodeURIComponent(q)}`).then((r) => r.json()).catch(() => []);
-    if (local.length >= 4) return local;
+  async function searchPlaces(q, signal) {
+    const local = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal }).then((r) => r.json()).catch(() => []);
+    if (local.length >= 3 || q.length < 3) return local;
     // Fallback: OpenStreetMap Nominatim, limited to Ghana (called from YOUR browser).
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=gh&limit=5&q=${encodeURIComponent(q)}`;
-      const osm = await fetch(url, { headers: { "Accept-Language": "en" } }).then((r) => r.json());
+      const osm = await fetch(url, { signal, headers: { "Accept-Language": "en" } }).then((r) => r.json());
       return local.concat(osm.map((o) => ({ name: o.display_name.split(",").slice(0, 2).join(","), lat: +o.lat, lon: +o.lon, kind: "place" })));
     } catch { return local; }
+  }
+
+  // Phones: hide the map while typing so the keyboard doesn't squash the boxes.
+  const isPhone = () => window.matchMedia("(max-width: 899px)").matches;
+  function setTyping(on) {
+    if (!isPhone()) return;
+    document.body.classList.toggle("typing", on);
+    if (on) window.scrollTo(0, 0);
+    else setTimeout(() => map.invalidateSize(), 50);
   }
 
   function wireAutocomplete(which) {
     const input = $(which + "Input");
     const list = $(which + "Suggest");
-    let timer, items = [], active = -1;
+    let timer, items = [], active = -1, seq = 0, ctrl = null;
     const close = () => { list.classList.remove("open"); active = -1; };
-    const choose = (it) => { setPoint(which, it); close(); map.panTo([it.lat, it.lon]); if (state.from && state.to) plan(); };
+    const choose = (it) => {
+      setPoint(which, it); close(); input.blur(); setTyping(false);
+      map.panTo([it.lat, it.lon]);
+      if (state.from && state.to) plan();
+      else if (which === "from") $("toInput").focus();
+    };
+    input.addEventListener("focus", () => { setTyping(true); if (items.length && input.value.trim().length >= 2) list.classList.add("open"); });
     input.addEventListener("input", () => {
       clearTimeout(timer);
       const q = input.value.trim();
-      if (q.length < 2) return close();
+      if (q.length < 2) { items = []; return close(); }
       timer = setTimeout(async () => {
-        items = await searchPlaces(q);
+        const my = ++seq;
+        if (ctrl) ctrl.abort();
+        ctrl = new AbortController();
+        const res = await searchPlaces(q, ctrl.signal);
+        if (my !== seq || input.value.trim() !== q) return;   // stale response: ignore
+        items = res;
         list.innerHTML = items.map((it, i) => `<li data-i="${i}"><span>${esc(it.name)}</span><span class="kind">${esc(it.kind)}</span></li>`).join("");
         list.classList.toggle("open", items.length > 0);
-      }, 220);
+      }, 250);
     });
-    list.addEventListener("mousedown", (e) => {
+    // pointerdown + preventDefault: select before the input loses focus (no lost taps on phones)
+    list.addEventListener("pointerdown", (e) => {
       const li = e.target.closest("li");
-      if (li) choose(items[+li.dataset.i]);
+      if (!li) return;
+      e.preventDefault();
+      choose(items[+li.dataset.i]);
     });
     input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && list.classList.contains("open") && items.length) {
+        e.preventDefault(); choose(items[active >= 0 ? active : 0]); return;
+      }
       if (!list.classList.contains("open")) return;
       const lis = list.querySelectorAll("li");
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
         active = (active + (e.key === "ArrowDown" ? 1 : -1) + lis.length) % lis.length;
         lis.forEach((l, i) => l.classList.toggle("active", i === active));
-      } else if (e.key === "Enter" && active >= 0) {
-        e.preventDefault(); choose(items[active]);
       } else if (e.key === "Escape") close();
     });
-    input.addEventListener("blur", () => setTimeout(close, 150));
+    input.addEventListener("blur", () => setTimeout(() => {
+      close();
+      if (!document.activeElement || !["fromInput", "toInput"].includes(document.activeElement.id)) setTyping(false);
+    }, 120));
   }
   wireAutocomplete("from");
   wireAutocomplete("to");
