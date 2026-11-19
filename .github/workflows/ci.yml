@@ -36,6 +36,6 @@ jobs:
       - name: Smoke test container
         run: |
           docker build -t legsus:ci .
-          docker run -d --name l -p 8000:8000 legsus:ci
-          for i in $(seq 1 30); do curl -fs localhost:8000/readyz && break; sleep 1; done
+          docker run -d --name legsus-smoke -p 8000:8000 legsus:ci
+          for i in $(seq 1 30); do curl -fs localhost:8000/readyz && break; sleep 1; done || (docker logs legsus-smoke; exit 1)
           curl -fs "localhost:8000/api/plan?from_lat=5.676&from_lon=-0.166&to_lat=5.57&to_lon=-0.215" | python -c "import sys,json; assert json.load(sys.stdin)['itineraries']"
