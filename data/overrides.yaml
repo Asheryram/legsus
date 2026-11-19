@@ -1,0 +1,40 @@
+# LegSus personal overrides — this file is YOUR data layer.
+# The base route data is the open AccraMobile3/Trufi feed (mapped 2017-2019).
+# Anything here wins over it. Edit, then POST /api/reload (or restart).
+
+settings:
+  # Tune these to how Accra actually feels to you.
+  trotro_speed_kmh: 14        # lower it if you ride in rush hour
+  board_wait_min: 8           # time to find + fill a trotro
+  transfer_penalty_min: 6     # how much you hate changing cars
+  walk_reluctance: 1.6        # >1 means you'd rather sit than walk
+  max_access_walk_m: 1200
+
+  # Uber estimate: PLACEHOLDERS. Replace with numbers from your own receipts.
+  uber_base_ghs: 8.0
+  uber_per_km_ghs: 3.0
+  uber_per_min_ghs: 0.4
+  uber_min_fare_ghs: 15.0
+
+# Saved places show up first in search.
+places:
+  Home: { lat: 5.6760, lon: -0.1660 }       # example — change me
+  Work: { lat: 5.5700, lon: -0.2150 }       # example — change me
+
+# Per-route fixes. Key = trotro number (ref) or GTFS route_id.
+routes:
+  # "422":
+  #   shout: "Circle! Circle! Odo!"   # what the mate actually calls
+  #   fare: 13.00                      # flat fare you usually pay
+  #   note: "Loads at the back of Madina station, by the Total"
+  # "998":
+  #   disabled: true                   # route no longer runs
+
+# Per-stop fixes. Key = GTFS stop_id (shown in the app under each stop).
+stops:
+  # "4980841300":
+  #   alias: "37 Station (by the lorry park)"
+  #   note: "Stand on the hospital side"
+
+# Fares you actually paid. The app appends here when you tap "Log fare".
+fare_log: []

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b3d2e" />
+  <title>LegSus — trotro planner</title>
+  <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="bar">
+    <div class="brand"><span class="logo">LS</span> LegSus <small>trotro, not Uber</small></div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <form id="planForm" autocomplete="off">
+        <div class="field">
+          <span class="dot from"></span>
+          <input id="fromInput" placeholder="From — stop, place, or tap map" />
+          <button type="button" class="icon" id="locBtn" title="Use my location">◎</button>
+          <ul class="suggest" id="fromSuggest"></ul>
+        </div>
+        <div class="field">
+          <span class="dot to"></span>
+          <input id="toInput" placeholder="To — where are you going?" />
+          <button type="button" class="icon" id="swapBtn" title="Swap">⇅</button>
+          <ul class="suggest" id="toSuggest"></ul>
+        </div>
+        <div class="row">
+          <div class="pick">Tap map sets:
+            <label><input type="radio" name="pick" value="from" checked /> From</label>
+            <label><input type="radio" name="pick" value="to" /> To</label>
+          </div>
+          <button type="submit" class="go">Find trotro</button>
+        </div>
+      </form>
+
+      <div id="status" class="status"></div>
+      <div id="uber" class="uber hidden"></div>
+      <div id="results"></div>
+      <footer class="foot">
+        Route data: AccraMobile3 / Trufi (OpenStreetMap, 2017–19). Fares are estimates until you log real ones.
+        Map © OpenStreetMap contributors.
+      </footer>
+    </section>
+    <div id="map"></div>
+  </main>
+
+  <script src="/static/vendor/leaflet/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

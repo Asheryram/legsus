@@ -1,0 +1,12 @@
+services:
+  legsus:
+    build: .
+    image: legsus:local
+    ports:
+      - "8000:8000"
+    volumes:
+      # Your overrides (fares, notes, saved places) live here and survive rebuilds.
+      - ./data/overrides.yaml:/app/state/overrides.yaml
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
